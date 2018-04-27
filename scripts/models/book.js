@@ -1,13 +1,6 @@
 'use strict';
 
-var app = {};
 
-const ENV = {};
-
-ENV.isProduction = window.location.protocol === 'https:';
-ENV.productionAPIUrl = 'https://bh-mb-booklist.herokuapp.com';
-ENV.developmentApiUrl = 'http://localhost:3000';
-ENV.apiUrl = ENV.isProduction ? ENV.productionAPIUrl : ENV.developmentApiUrl;
 
 
 (function (module) {
@@ -31,10 +24,13 @@ ENV.apiUrl = ENV.isProduction ? ENV.productionAPIUrl : ENV.developmentApiUrl;
 
   Book.loadAll = rows => {
     Book.all = rows.map(book => new Book(book));
+    Book.all.sort(function (a, b) {
+      return a.book_id - b.book_id;
+    });
     console.log(Book.all);
   };
 
-  // callback is going to be: app.booksView.initIndexPage
+
   Book.fetchAll = callback => {
     $.get(`${ENV.apiUrl}/api/v1/books`)
       .then(Book.loadAll)
@@ -47,6 +43,31 @@ ENV.apiUrl = ENV.isProduction ? ENV.productionAPIUrl : ENV.developmentApiUrl;
       .then(() => page('/'))
       .catch(errorCallback);
   };
+
+
+  Book.editBook = (bookToEdit, bookObj) => {
+    $.ajax({
+        url: `${ENV.apiUrl}/api/v1/edit/${bookToEdit}`,
+        method: 'PUT',
+        data: bookObj
+      })
+      .then(() => Book.fetchAll(app.booksView.initBookPage))
+      .then(() => {
+        console.log(bookToEdit);
+        page(`/book/${bookToEdit}`);
+      });
+  };
+
+  Book.deleteBook = bookToDelete => {
+    $.ajax({
+        url: `${ENV.apiUrl}/api/v1/books/${bookToDelete}`,
+        method: 'DELETE'
+      })
+      .then(() => page('/'))
+      .catch(errorCallback);
+  };
+
+
 
   function errorCallback(err) {
     console.error(err);
